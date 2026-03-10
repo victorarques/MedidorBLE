@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- BLE toolbar -->
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:padding="8dp"
         android:background="#E3F2FD" android:gravity="center_vertical">
@@ -19,38 +17,36 @@
             android:textColor="@color/red" android:textSize="13sp"/>
     </LinearLayout>
 
-    <!-- Canvas -->
     <com.medidorble.ui.FloorPlanView
         android:id="@+id/floorPlanView"
         android:layout_width="match_parent" android:layout_height="0dp"
         android:layout_weight="1" android:background="#FAFAFA"/>
 
-    <!-- Controls panel -->
     <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="vertical" android:padding="8dp">
 
-        <!-- Measurement display -->
         <TextView android:id="@+id/tvMeasurement"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:text="&#8212; esperant mesura &#8212;"
             android:textSize="26sp" android:textStyle="bold"
             android:gravity="center" android:textColor="#1565C0" android:padding="6dp"/>
 
-        <!-- Angle slider -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal" android:gravity="center_vertical">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Gir:" android:layout_marginEnd="4dp"/>
-            <com.google.android.material.slider.Slider
+            <SeekBar
                 android:id="@+id/sliderAngle"
-                android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:id="@+id/sliderAngle"
-    android:layout_width="0dp" android:layout_weight="1"
-    android:layout_height="wrap_content"
-    android:max="54"
-    android:progress="18"/>
-        <!-- Row 1: Room + Manual + Add Wall -->
+                android:layout_width="0dp" android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:max="54"
+                android:progress="18"/>
+            <TextView android:id="@+id/tvAngleValue"
+                android:layout_width="44dp" android:layout_height="wrap_content"
+                android:text="90°" android:gravity="end"/>
+        </LinearLayout>
+
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button android:id="@+id/btnNewRoom"
@@ -67,7 +63,6 @@
                 android:enabled="false"/>
         </LinearLayout>
 
-        <!-- Row 2: Undo + Close -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button android:id="@+id/btnUndo"
@@ -82,7 +77,6 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
         </LinearLayout>
 
-        <!-- Row 3: Export -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
             <Button android:id="@+id/btnExportDxf"
@@ -95,7 +89,6 @@
                 android:enabled="false"/>
         </LinearLayout>
 
-        <!-- Wall summary -->
         <TextView android:id="@+id/tvWallList"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:fontFamily="monospace" android:textSize="12sp"
