@@ -5,16 +5,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-      - name: Dona permisos a gradlew
-        run: chmod +x MedidorBLE/gradlew
+
+      - name: Instal·la Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.2'
+
       - name: Compila APK
-        run: |
-          cd MedidorBLE
-          ./gradlew assembleDebug --no-daemon
+        run: gradle assembleDebug --project-dir MedidorBLE
+
       - name: Puja APK
         uses: actions/upload-artifact@v4
         with:
