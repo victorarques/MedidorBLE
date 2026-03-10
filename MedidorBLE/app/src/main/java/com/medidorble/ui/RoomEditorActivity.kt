@@ -115,10 +115,14 @@ class RoomEditorActivity : AppCompatActivity() {
         b.btnExportDxf.setOnClickListener { exportDxf() }
         b.btnExportXlsx.setOnClickListener { exportXlsx() }
 
-        b.sliderAngle.addOnChangeListener { _, v, _ ->
-            turnAngle = v.toDouble()
-            b.tvAngleValue.text = "${v.toInt()}°"
-        }
+        b.sliderAngle.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+    override fun onProgressChanged(sb: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+        turnAngle = (progress * 5).toDouble()
+        b.tvAngleValue.text = "${progress * 5}°"
+    }
+    override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
+    override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
+})
         b.sliderAngle.value = 90f
         refreshUi()
     }
