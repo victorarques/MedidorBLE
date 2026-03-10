@@ -8,8 +8,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.View
 import android.widget.EditText
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -19,8 +21,6 @@ import androidx.core.content.FileProvider
 import com.medidorble.ble.BleManager
 import com.medidorble.data.*
 import com.medidorble.databinding.ActivityRoomEditorBinding
-import com.medidorble.export.DxfExporter
-import com.medidorble.export.ExcelExporter
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,11 +35,11 @@ class RoomEditorActivity : AppCompatActivity() {
     private var currentRoom: Room? = null
     private var pendingMeasure: Double? = null
     private var turnAngle = 90.0
-    private var wallCnt = 1; private var roomCnt = 1
+    private var wallCnt = 1
+    private var roomCnt = 1
 
-    private val foundDevices = LinkedHashMap<String, String>()   // name → address
+    private val foundDevices = LinkedHashMap<String, String>() // name → address
 
-    // ── Permissions launcher (class-level) ───────────────────────────────
     private var onPermsGranted: (() -> Unit)? = null
     private val permLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -48,26 +48,31 @@ class RoomEditorActivity : AppCompatActivity() {
         else toast("Permisos BLE necessaris")
     }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────
-
     override fun onCreate(s: Bundle?) {
         super.onCreate(s)
         b = ActivityRoomEditorBinding.inflate(layoutInflater)
         setContentView(b.root)
 
         val idx = intent.getIntExtra("PROJECT_IDX", -1)
-        project = if (idx >= 0) ProjectRepository.projects[idx]
-                  else Project(name = "Projecte")
+        // Correcció: Accés segur al repositori
+        project = if (idx >= 0 && idx < ProjectRepository.projects.size) {
+            ProjectRepository.projects[idx]
+        } else {
+            Project(name = "Projecte")
+        }
         title = project.name
 
-        btAdapter = (getSystemService(BluetoothManager::class.java)).adapter
+        val bluetoothManager = getSystemService(BluetoothManager::class.java)
+        btAdapter = bluetoothManager?.adapter
+        
         setupBle()
         setupUi()
     }
 
-    override fun onDestroy() { super.onDestroy(); ble.disconnect() }
-
-    // ── BLE ───────────────────────────────────────────────────────────────
+    override fun onDestroy() {
+        super.onDestroy()
+        ble.disconnect()
+    }
 
     private fun setupBle() {
         ble = BleManager(this)
@@ -80,12 +85,12 @@ class RoomEditorActivity : AppCompatActivity() {
             }
             override fun onConnected(name: String) = runOnUiThread {
                 b.tvBleStatus.text = "✓ $name"
-                b.tvBleStatus.setTextColor(getColor(com.medidorble.R.color.green))
+                b.tvBleStatus.setTextColor(ContextCompat.getColor(this@RoomEditorActivity, android.R.color.holo_green_dark))
                 b.btnScan.text = "Desconnectar"
             }
             override fun onDisconnected() = runOnUiThread {
                 b.tvBleStatus.text = "Desconnectat"
-                b.tvBleStatus.setTextColor(getColor(com.medidorble.R.color.red))
+                b.tvBleStatus.setTextColor(ContextCompat.getColor(this@RoomEditorActivity, android.R.color.holo_red_dark))
                 b.btnScan.text = "Cercar Làser BLE"
             }
             override fun onMeasurement(meters: Double) = runOnUiThread { receiveMeasure(meters) }
@@ -96,14 +101,13 @@ class RoomEditorActivity : AppCompatActivity() {
     private fun showDeviceChooser() {
         if (foundDevices.isEmpty()) return
         val names = foundDevices.keys.toTypedArray()
-        AlertDialog.Builder(this).setTitle("Dispositius BLE trobats")
+        AlertDialog.Builder(this)
+            .setTitle("Dispositius BLE trobats")
             .setItems(names) { _, i ->
                 ble.stopScan()
-                ble.connect(foundDevices[names[i]]!!, btAdapter!!)
+                btAdapter?.let { ble.connect(foundDevices[names[i]]!!, it) }
             }.show()
     }
-
-    // ── UI setup ──────────────────────────────────────────────────────────
 
     private fun setupUi() {
         b.btnScan.setOnClickListener { onScanClick() }
@@ -112,162 +116,172 @@ class RoomEditorActivity : AppCompatActivity() {
         b.btnAddWall.setOnClickListener { addWall() }
         b.btnUndo.setOnClickListener { undoWall() }
         b.btnCloseRoom.setOnClickListener { closeRoom() }
-        b.btnExportDxf.setOnClickListener { exportDxf() }
-        b.btnExportXlsx.setOnClickListener { exportXlsx() }
+        // b.btnExportDxf.setOnClickListener { exportDxf() } // Implementar si DxfExporter existeix
+        // b.btnExportXlsx.setOnClickListener { exportXlsx() }
 
-        b.sliderAngle.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-    override fun onProgressChanged(sb: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
-        turnAngle = (progress * 5).toDouble()
-        b.tvAngleValue.text = "${progress * 5}°"
-    }
-    override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-    override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
-})
-        b.sliderAngle.value = 90f
+        b.sliderAngle.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                turnAngle = (progress * 5).toDouble()
+                b.tvAngleValue.text = "$turnAngle°"
+            }
+            override fun onStartTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {}
+        })
+        b.sliderAngle.progress = 18 // 18 * 5 = 90 graus per defecte
         refreshUi()
     }
 
     private fun onScanClick() {
-        val a = btAdapter ?: run { toast("Bluetooth no disponible"); return }
-        if (!a.isEnabled) { toast("Activa el Bluetooth"); return }
-        if (b.btnScan.text == "Desconnectar") { ble.disconnect(); return }
+        val adapter = btAdapter ?: run { toast("Bluetooth no disponible"); return }
+        if (!adapter.isEnabled) { toast("Activa el Bluetooth"); return }
+        if (b.btnScan.text == "Desconnectar") { 
+            ble.disconnect() 
+            return 
+        }
         requestBle {
             foundDevices.clear()
             b.tvBleStatus.text = "Cercant…"
-            ble.startScan(a)
+            ble.startScan(adapter)
         }
     }
 
-    // ── Room / wall logic ─────────────────────────────────────────────────
-
     private fun newRoomDialog() {
-        val et = EditText(this).apply { hint = "Nom de l'habitació"; setPadding(48,16,48,16) }
-        AlertDialog.Builder(this).setTitle("Nova habitació").setView(et)
+        val et = EditText(this).apply { 
+            hint = "Nom de l'habitació"
+            setPadding(60, 40, 60, 40)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Nova habitació")
+            .setView(et)
             .setPositiveButton("Crear") { _, _ ->
                 val name = et.text.toString().trim().ifBlank { "Habitació $roomCnt" }
-                roomCnt++; wallCnt = 1
+                roomCnt++
+                wallCnt = 1
                 val room = Room(project.rooms.size, name)
                 project.rooms.add(room)
                 currentRoom = room
-                refreshUi(); title = "${project.name} › $name"
-            }.setNegativeButton("Cancel·lar", null).show()
+                refreshUi()
+                title = "${project.name} › $name"
+            }
+            .setNegativeButton("Cancel·lar", null)
+            .show()
     }
 
     private fun manualInputDialog() {
         val et = EditText(this).apply {
             hint = "Longitud en metres (ex: 3.45)"
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or
-                        android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-            setPadding(48, 16, 48, 16)
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setPadding(60, 40, 60, 40)
         }
-        AlertDialog.Builder(this).setTitle("Entrada manual").setView(et)
+        AlertDialog.Builder(this)
+            .setTitle("Entrada manual")
+            .setView(et)
             .setPositiveButton("Afegir") { _, _ ->
                 et.text.toString().toDoubleOrNull()
                     ?.takeIf { it > 0.01 }
                     ?.let { receiveMeasure(it) }
                     ?: toast("Valor no vàlid")
-            }.setNegativeButton("Cancel·lar", null).show()
+            }
+            .setNegativeButton("Cancel·lar", null)
+            .show()
     }
 
     private fun receiveMeasure(m: Double) {
         pendingMeasure = m
-        b.tvMeasurement.text = "${"%.3f".format(m)} m"
+        b.tvMeasurement.text = String.format("%.3f m", m)
         b.btnAddWall.isEnabled = currentRoom != null
-        toast("Mesura: ${"%.3f".format(m)} m")
+        toast("Mesura rebuda: $m m")
     }
 
     private fun addWall() {
         val room = currentRoom ?: return
-        val len  = pendingMeasure ?: return
+        val len = pendingMeasure ?: return
         val turn = if (room.walls.isEmpty()) 0.0 else turnAngle
+        
         room.walls.add(Wall(room.walls.size, "P${wallCnt++}", len, turn))
         pendingMeasure = null
         b.tvMeasurement.text = "— esperant mesura —"
+        
         if (room.isClosed()) toast("✓ Habitació tancada automàticament")
         refreshUi()
     }
 
     private fun undoWall() {
-        currentRoom?.walls?.removeLastOrNull()
-        if (wallCnt > 1) wallCnt--
-        refreshUi()
+        val walls = currentRoom?.walls
+        if (walls != null && walls.isNotEmpty()) {
+            walls.removeAt(walls.size - 1)
+            if (wallCnt > 1) wallCnt--
+            refreshUi()
+        }
     }
 
     private fun closeRoom() {
         val room = currentRoom ?: run { toast("Primer crea una habitació"); return }
-        if (room.walls.size < 3) { toast("Necessites almenys 3 parets"); return }
+        if (room.walls.size < 3) { 
+            toast("Necessites almenys 3 parets")
+            return 
+        }
+        
         AlertDialog.Builder(this)
-            .setTitle("Tancar "${room.name}"")
-            .setMessage("Superfície: ${"%.3f".format(room.area())} m²
-Perímetre: ${"%.3f".format(room.perimeter())} m")
+            .setTitle("Tancar \"${room.name}\"")
+            .setMessage("""
+                Superfície: ${String.format("%.3f", room.area())} m²
+                Perímetre: ${String.format("%.3f", room.perimeter())} m
+            """.trimIndent())
             .setPositiveButton("Confirmar") { _, _ ->
-                currentRoom = null; title = project.name; refreshUi()
-            }.setNegativeButton("Seguir mesurant", null).show()
+                currentRoom = null
+                title = project.name
+                refreshUi()
+            }
+            .setNegativeButton("Seguir mesurant", null)
+            .show()
     }
-
-    // ── Refresh ───────────────────────────────────────────────────────────
 
     private fun refreshUi() {
         b.floorPlanView.setProject(project, currentRoom)
         val room = currentRoom
+        
         b.tvWallList.text = if (room == null) {
-            project.rooms.joinToString("
-") { r ->
-                "${r.name}: ${"%.3f".format(r.area())} m²"
-            }.ifEmpty { "Cap habitació" }
+            project.rooms.joinToString("\n") { r ->
+                "${r.name}: ${String.format("%.3f", r.area())} m²"
+            }.ifEmpty { "Cap habitació creada" }
         } else {
-            room.walls.joinToString("
-") { w ->
-                "${w.label}: ${"%.3f".format(w.length)} m  (gir ${w.turnAngle.toInt()}°)"
-            } + "
-S = ${"%.3f".format(room.area())} m²"
+            room.walls.joinToString("\n") { w ->
+                "${w.label}: ${w.length} m (${w.turnAngle.toInt()}°)"
+            } + "\n\nS = ${String.format("%.3f", room.area())} m²"
         }
-        val hasRoom   = room != null
-        val hasWalls  = hasRoom && (room?.walls?.isNotEmpty() == true)
+
+        val hasRoom = room != null
+        val hasWalls = room?.walls?.isNotEmpty() == true
         val canExport = project.rooms.any { it.walls.size >= 2 }
-        b.btnAddWall.isEnabled    = hasRoom && pendingMeasure != null
-        b.btnUndo.isEnabled       = hasWalls
-        b.btnCloseRoom.isEnabled  = hasWalls
-        b.btnExportDxf.isEnabled  = canExport
+
+        b.btnAddWall.isEnabled = hasRoom && pendingMeasure != null
+        b.btnUndo.isEnabled = hasWalls
+        b.btnCloseRoom.isEnabled = hasWalls
+        b.btnExportDxf.isEnabled = canExport
         b.btnExportXlsx.isEnabled = canExport
     }
 
-    // ── Export ────────────────────────────────────────────────────────────
-
-    private fun exportDxf() = export("dxf") { f -> DxfExporter.export(project, f) }
-    private fun exportXlsx() = export("xlsx") { f -> ExcelExporter.export(project, f) }
-
-    private fun export(ext: String, block: (File) -> Unit) {
-        val ts = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-        val file = File(getExternalFilesDir(null), "${project.name}_$ts.$ext")
-        try {
-            block(file)
-            val uri: Uri = FileProvider.getUriForFile(this, "$packageName.provider", file)
-            val mime = if (ext == "dxf") "application/dxf"
-                       else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            startActivity(Intent.createChooser(
-                Intent(Intent.ACTION_SEND).apply {
-                    type = mime; putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }, "Exportar $ext"))
-        } catch (e: Exception) {
-            toast("Error exportant: ${e.message}")
-        }
-    }
-
-    // ── Permissions ───────────────────────────────────────────────────────
-
     private fun requestBle(block: () -> Unit) {
-        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_CONNECT)
-        else arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        
         val needed = perms.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
-        if (needed.isEmpty()) { block(); return }
-        onPermsGranted = block
-        permLauncher.launch(needed.toTypedArray())
+
+        if (needed.isEmpty()) {
+            block()
+        } else {
+            onPermsGranted = block
+            permLauncher.launch(needed.toTypedArray())
+        }
     }
 
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
 }
