@@ -1,0 +1,23 @@
+name: Build APK
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Dona permisos a gradlew
+        run: chmod +x MedidorBLE/gradlew
+      - name: Compila APK
+        run: |
+          cd MedidorBLE
+          ./gradlew assembleDebug --no-daemon
+      - name: Puja APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MedidorBLE-debug
+          path: MedidorBLE/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
