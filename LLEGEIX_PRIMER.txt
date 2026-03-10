@@ -1,0 +1,80 @@
+# 📱 Com instal·lar MedidorBLE al teu Android
+## (Sense PC, des del mòbil)
+
+─────────────────────────────────────────────
+## PAS 1 — Crea un compte a GitHub (1 minut)
+─────────────────────────────────────────────
+
+1. Obre el navegador del mòbil
+2. Vés a: https://github.com/signup
+3. Introdueix correu, contrasenya i nom d'usuari
+4. Verifica el correu
+
+─────────────────────────────────────────────
+## PAS 2 — Crea un repositori (2 minuts)
+─────────────────────────────────────────────
+
+1. Un cop dins GitHub, toca el botó verd "New" (o el símbol +)
+2. Posa de nom: MedidorBLE
+3. Deixa-ho en "Private" si vols que ningú ho vegi
+4. Toca "Create repository"
+
+─────────────────────────────────────────────
+## PAS 3 — Puja el codi (5 minuts)
+─────────────────────────────────────────────
+
+Necessites pujar el contingut d'aquest ZIP al repositori.
+
+La manera més fàcil des del mòbil:
+
+1. Descomprimeix el ZIP (gestor de fitxers del mòbil)
+2. A GitHub, dins del repositori buit, toca "uploading an existing file"
+3. Selecciona TOTS els fitxers i carpetes descomprimits
+4. Toca "Commit changes" (botó verd)
+
+   ⚠️  IMPORTANT: Has de pujar els fitxers mantenint
+       l'estructura de carpetes exacta del ZIP.
+       Si el teu gestor de fitxers no ho permet,
+       usa l'opció alternativa de baix ↓
+
+ALTERNATIVA: Usa l'app "GitHub" del Play Store
+→ permet pujar carpetes senceres fàcilment
+
+─────────────────────────────────────────────
+## PAS 4 — Espera la compilació (5-8 minuts)
+─────────────────────────────────────────────
+
+1. Un cop pujat el codi, GitHub compila automàticament
+2. Toca la pestanya "Actions" del repositori
+3. Veuràs un cercle groc ⟳ (compilant) o verd ✓ (llest)
+4. Si surt vermell ✗, contacta per revisar l'error
+
+─────────────────────────────────────────────
+## PAS 5 — Descarrega i instal·la l'APK
+─────────────────────────────────────────────
+
+1. Toca el workflow verd ✓ a la pestanya Actions
+2. A baix de tot veuràs "Artifacts" → toca "MedidorBLE-debug"
+3. Es descarregarà un ZIP amb l'APK dins
+4. Descomprimeix-lo i toca l'APK per instal·lar
+
+   ⚠️  El mòbil et demanarà permís per instal·lar
+       apps de fonts desconegudes → Accepta
+
+─────────────────────────────────────────────
+## ❓ Problemes freqüents
+─────────────────────────────────────────────
+
+"No puc instal·lar l'APK"
+→ Ajustos > Seguretat > Instal·lar apps desconegudes
+  → Activa per al navegador/gestor de fitxers
+
+"La compilació falla (creu vermella)"
+→ Comprova que el ZIP s'ha descomprimitat correctament
+  i que la carpeta "MedidorBLE" és visible al repositori
+
+─────────────────────────────────────────────
+RESUM RÀPID
+─────────────────────────────────────────────
+github.com → Nou repo → Puja fitxers → Actions → Descarrega APK → Instal·la
+Total: ~10 minuts la primera vegada
