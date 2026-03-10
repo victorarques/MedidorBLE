@@ -45,12 +45,11 @@
             <com.google.android.material.slider.Slider
                 android:id="@+id/sliderAngle"
                 android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-                app:valueFrom="0" app:valueTo="270" app:stepSize="5" app:labelBehavior="gone"/>
-            <TextView android:id="@+id/tvAngleValue"
-                android:layout_width="44dp" android:layout_height="wrap_content"
-                android:text="90°" android:gravity="end"/>
-        </LinearLayout>
-
+            android:id="@+id/sliderAngle"
+    android:layout_width="0dp" android:layout_weight="1"
+    android:layout_height="wrap_content"
+    android:max="54"
+    android:progress="18"/>
         <!-- Row 1: Room + Manual + Add Wall -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="horizontal">
