@@ -25,11 +25,9 @@ class MainActivity : AppCompatActivity() {
         b = ActivityMainBinding.inflate(layoutInflater)
         setContentView(b.root)
         setSupportActionBar(b.toolbar)
-
         adapter = Adapter()
         b.rvProjects.layoutManager = LinearLayoutManager(this)
         b.rvProjects.adapter = adapter
-
         b.fabNewProject.setOnClickListener { newProjectDialog() }
     }
 
@@ -37,13 +35,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun newProjectDialog() {
         val et = EditText(this).apply { hint = "Nom del projecte"; setPadding(48,16,48,16) }
-        AlertDialog.Builder(this).setTitle("Nou projecte").setView(et)
+        AlertDialog.Builder(this)
+            .setTitle("Nou projecte")
+            .setView(et)
             .setPositiveButton("Crear") { _, _ ->
                 val name = et.text.toString().trim().ifBlank { "Projecte ${projects.size + 1}" }
                 projects.add(Project(name = name))
                 adapter.notifyItemInserted(projects.size - 1)
             }
-            .setNegativeButton("Cancel·lar", null).show()
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     inner class Adapter : RecyclerView.Adapter<Adapter.VH>() {
@@ -57,17 +58,19 @@ class MainActivity : AppCompatActivity() {
         override fun onBindViewHolder(h: VH, pos: Int) {
             val p = projects[pos]
             h.name.text = p.name
-            h.info.text = "${p.rooms.size} habitacions · ${"%.2f".format(p.totalArea())} m²"
+            h.info.text = "${p.rooms.size} habitacions · ${"%.2f".format(p.totalArea())} m2"
             h.itemView.setOnClickListener {
                 startActivity(Intent(this@MainActivity, RoomEditorActivity::class.java)
                     .putExtra("PROJECT_IDX", pos))
             }
             h.itemView.setOnLongClickListener {
                 AlertDialog.Builder(this@MainActivity)
-                    .setTitle("Eliminar "${p.name}"?")
+                    .setTitle("Eliminar \"${p.name}\"?")
                     .setPositiveButton("Eliminar") { _, _ ->
                         projects.removeAt(pos); notifyItemRemoved(pos)
-                    }.setNegativeButton("Cancel·lar", null).show()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
                 true
             }
         }
