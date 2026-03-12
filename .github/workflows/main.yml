@@ -13,15 +13,12 @@ jobs:
 
       - name: Instal·la Gradle
         run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
-          unzip -q gradle-8.2-bin.zip
-          echo "$PWD/gradle-8.2/bin" >> $GITHUB_PATH
-
-      - name: Neteja caché
-        run: rm -rf ~/.gradle/caches
+          wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
+          unzip -q gradle-8.7-bin.zip
+          echo "$PWD/gradle-8.7/bin" >> $GITHUB_PATH
 
       - name: Compila APK
-        run: gradle assembleDebug --project-dir MedidorBLE --no-daemon
+        run: gradle assembleDebug --project-dir MedidorBLE --no-daemon --refresh-dependencies
 
       - name: Puja APK
         uses: actions/upload-artifact@v4
