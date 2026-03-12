@@ -52,12 +52,10 @@ class RoomEditorActivity : AppCompatActivity() {
         super.onCreate(s)
         b = ActivityRoomEditorBinding.inflate(layoutInflater)
         setContentView(b.root)
-
         val idx = intent.getIntExtra("PROJECT_IDX", -1)
         project = if (idx >= 0) ProjectRepository.projects[idx]
                   else Project(name = "Projecte")
         title = project.name
-
         btAdapter = (getSystemService(BluetoothManager::class.java)).adapter
         setupBle()
         setupUi()
@@ -75,14 +73,14 @@ class RoomEditorActivity : AppCompatActivity() {
                 }
             }
             override fun onConnected(name: String) = runOnUiThread {
-                b.tvBleStatus.text = "✓ $name"
+                b.tvBleStatus.text = "\u2713 $name"
                 b.tvBleStatus.setTextColor(getColor(com.medidorble.R.color.green))
                 b.btnScan.text = "Desconnectar"
             }
             override fun onDisconnected() = runOnUiThread {
                 b.tvBleStatus.text = "Desconnectat"
                 b.tvBleStatus.setTextColor(getColor(com.medidorble.R.color.red))
-                b.btnScan.text = "Cercar Làser BLE"
+                b.btnScan.text = "Cercar L\u00e0ser BLE"
             }
             override fun onMeasurement(meters: Double) = runOnUiThread { receiveMeasure(meters) }
             override fun onError(msg: String) = runOnUiThread { toast(msg) }
@@ -108,16 +106,14 @@ class RoomEditorActivity : AppCompatActivity() {
         b.btnCloseRoom.setOnClickListener { closeRoom() }
         b.btnExportDxf.setOnClickListener { exportDxf() }
         b.btnExportXlsx.setOnClickListener { exportXlsx() }
-
         b.sliderAngle.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 turnAngle = (progress * 5).toDouble()
-                b.tvAngleValue.text = "${progress * 5}°"
+                b.tvAngleValue.text = "${progress * 5}\u00b0"
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {}
         })
-
         refreshUi()
     }
 
@@ -127,22 +123,22 @@ class RoomEditorActivity : AppCompatActivity() {
         if (b.btnScan.text == "Desconnectar") { ble.disconnect(); return }
         requestBle {
             foundDevices.clear()
-            b.tvBleStatus.text = "Cercant…"
+            b.tvBleStatus.text = "Cercant\u2026"
             ble.startScan(a)
         }
     }
 
     private fun newRoomDialog() {
-        val et = EditText(this).apply { hint = "Nom de l’habitació"; setPadding(48,16,48,16) }
-        AlertDialog.Builder(this).setTitle("Nova habitació").setView(et)
+        val et = EditText(this).apply { hint = "Nom de l'habitaci\u00f3"; setPadding(48,16,48,16) }
+        AlertDialog.Builder(this).setTitle("Nova habitaci\u00f3").setView(et)
             .setPositiveButton("Crear") { _, _ ->
-                val name = et.text.toString().trim().ifBlank { "Habitació $roomCnt" }
+                val name = et.text.toString().trim().ifBlank { "Habitaci\u00f3 $roomCnt" }
                 roomCnt++; wallCnt = 1
                 val room = Room(project.rooms.size, name)
                 project.rooms.add(room)
                 currentRoom = room
-                refreshUi(); title = "${project.name} › $name"
-            }.setNegativeButton("Cancel·lar", null).show()
+                refreshUi(); title = "${project.name} \u203a $name"
+            }.setNegativeButton("Cancel\u00b7lar", null).show()
     }
 
     private fun manualInputDialog() {
@@ -157,8 +153,8 @@ class RoomEditorActivity : AppCompatActivity() {
                 et.text.toString().toDoubleOrNull()
                     ?.takeIf { it > 0.01 }
                     ?.let { receiveMeasure(it) }
-                    ?: toast("Valor no vàlid")
-            }.setNegativeButton("Cancel·lar", null).show()
+                    ?: toast("Valor no v\u00e0lid")
+            }.setNegativeButton("Cancel\u00b7lar", null).show()
     }
 
     private fun receiveMeasure(m: Double) {
@@ -174,8 +170,8 @@ class RoomEditorActivity : AppCompatActivity() {
         val turn = if (room.walls.isEmpty()) 0.0 else turnAngle
         room.walls.add(Wall(room.walls.size, "P${wallCnt++}", len, turn))
         pendingMeasure = null
-        b.tvMeasurement.text = "— esperant mesura —"
-        if (room.isClosed()) toast("✓ Habitació tancada automàticament")
+        b.tvMeasurement.text = "\u2014 esperant mesura \u2014"
+        if (room.isClosed()) toast("\u2713 Habitaci\u00f3 tancada autom\u00e0ticament")
         refreshUi()
     }
 
@@ -186,12 +182,11 @@ class RoomEditorActivity : AppCompatActivity() {
     }
 
     private fun closeRoom() {
-        val room = currentRoom ?: run { toast("Primer crea una habitació"); return }
+        val room = currentRoom ?: run { toast("Primer crea una habitaci\u00f3"); return }
         if (room.walls.size < 3) { toast("Necessites almenys 3 parets"); return }
         AlertDialog.Builder(this)
-            .setTitle("Tancar "${room.name}"")
-            .setMessage("Superfície: ${"%.3f".format(room.area())} m²
-Perímetre: ${"%.3f".format(room.perimeter())} m")
+            .setTitle("Tancar \"${room.name}\"")
+            .setMessage("Superf\u00edcie: ${"%.3f".format(room.area())} m\u00b2\nPer\u00edmetre: ${"%.3f".format(room.perimeter())} m")
             .setPositiveButton("Confirmar") { _, _ ->
                 currentRoom = null; title = project.name; refreshUi()
             }.setNegativeButton("Seguir mesurant", null).show()
@@ -201,16 +196,13 @@ Perímetre: ${"%.3f".format(room.perimeter())} m")
         b.floorPlanView.setProject(project, currentRoom)
         val room = currentRoom
         b.tvWallList.text = if (room == null) {
-            project.rooms.joinToString("
-") { r ->
-                "${r.name}: ${"%.3f".format(r.area())} m²"
-            }.ifEmpty { "Cap habitació" }
+            project.rooms.joinToString("\n") { r ->
+                "${r.name}: ${"%.3f".format(r.area())} m\u00b2"
+            }.ifEmpty { "Cap habitaci\u00f3" }
         } else {
-            room.walls.joinToString("
-") { w ->
-                "${w.label}: ${"%.3f".format(w.length)} m  (gir ${w.turnAngle.toInt()}°)"
-            } + "
-S = ${"%.3f".format(room.area())} m²"
+            room.walls.joinToString("\n") { w ->
+                "${w.label}: ${"%.3f".format(w.length)} m  (gir ${w.turnAngle.toInt()}\u00b0)"
+            } + "\nS = ${"%.3f".format(room.area())} m\u00b2"
         }
         val hasRoom   = room != null
         val hasWalls  = hasRoom && (room?.walls?.isNotEmpty() == true)
